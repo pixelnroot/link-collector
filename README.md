@@ -1,261 +1,248 @@
 # Link Collector
 
-A modern Next.js web application to collect, organize, and manage links by category using Vercel Postgres database. Deployable on Vercel with GitHub integration.
+A simple and elegant link management application built with Next.js and MongoDB. Collect, categorize, and organize your favorite links with ease.
 
 ## Features
 
-- Add unique links with categories (Facebook, X/Twitter, Website, YouTube, Instagram, LinkedIn, Other)
-- View all links or filter by specific category
-- Copy all links from a category with one click
-- Prevent duplicate links
-- Track statistics (total links, categories)
-- Responsive design
-- Server-side PostgreSQL database (Vercel Postgres)
-- Multi-device access with 99%+ uptime
-- Modern React-based UI with Next.js
+- Add links with custom categories
+- Automatic duplicate link detection
+- Filter links by category
+- View all links or filter by specific categories
+- Copy individual links or all filtered links at once
+- Beautiful, responsive UI
+- Ready for Vercel deployment
 
-## File Structure
+## Tech Stack
 
-```
-link-collector/
-├── app/
-│   ├── api/
-│   │   ├── links/route.js      # API endpoints for link operations
-│   │   └── stats/route.js      # API endpoint for statistics
-│   ├── add/
-│   │   └── page.js             # Add link page
-│   ├── view/
-│   │   └── page.js             # View links page
-│   ├── page.js                 # Homepage
-│   ├── layout.js               # Root layout
-│   └── globals.css             # Global styles
-├── lib/
-│   └── db.js                   # Database utilities
-├── package.json                # Dependencies
-├── next.config.js              # Next.js configuration
-├── vercel.json                 # Vercel deployment config
-└── README.md                   # This file
+- Next.js 14 (App Router)
+- MongoDB for data storage
+- React for UI components
+- CSS for styling
+
+## Prerequisites
+
+- Node.js 18+ installed
+- MongoDB Atlas account (free tier works great)
+- Vercel account (optional, for deployment)
+
+## Local Development Setup
+
+### 1. Clone the repository
+
+```bash
+git clone <your-repo-url>
+cd link-collector
 ```
 
-## Requirements
+### 2. Install dependencies
 
-- Node.js 18.x or higher
-- npm or yarn
-- Vercel account (free tier available)
-- GitHub account
-
-## Local Development
-
-1. Install dependencies:
 ```bash
 npm install
 ```
 
-2. Set up environment variables:
+### 3. Set up MongoDB
+
+1. Create a free MongoDB Atlas account at https://www.mongodb.com/cloud/atlas
+2. Create a new cluster (free tier M0 is sufficient)
+3. Create a database user with read/write permissions
+4. Whitelist your IP address (or use 0.0.0.0/0 for development)
+5. Get your connection string
+
+### 4. Configure environment variables
+
 Create a `.env.local` file in the root directory:
-```env
-# For local development with Vercel Postgres
-POSTGRES_URL="your-postgres-url"
-POSTGRES_PRISMA_URL="your-postgres-prisma-url"
-POSTGRES_URL_NON_POOLING="your-postgres-url-non-pooling"
-POSTGRES_USER="your-postgres-user"
-POSTGRES_HOST="your-postgres-host"
-POSTGRES_PASSWORD="your-postgres-password"
-POSTGRES_DATABASE="your-postgres-database"
+
+```bash
+cp .env.example .env.local
 ```
 
-3. Run development server:
+Edit `.env.local` and add your MongoDB connection string:
+
+```
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/linkCollector?retryWrites=true&w=majority
+```
+
+Replace:
+- `username` with your MongoDB username
+- `password` with your MongoDB password
+- `cluster` with your cluster name
+
+### 5. Run the development server
+
 ```bash
 npm run dev
 ```
 
-4. Open your browser and visit:
-```
-http://localhost:3000
-```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Deploy to Vercel (Recommended)
+## Deployment to Vercel
 
-### Step 1: Push to GitHub
+### Option 1: Deploy via Vercel Dashboard
 
-1. Initialize git repository (if not already):
+1. Push your code to GitHub, GitLab, or Bitbucket
+2. Go to [vercel.com](https://vercel.com) and sign in
+3. Click "New Project"
+4. Import your repository
+5. Add environment variable:
+   - Name: `MONGODB_URI`
+   - Value: Your MongoDB connection string
+6. Click "Deploy"
+
+### Option 2: Deploy via Vercel CLI
+
+1. Install Vercel CLI:
 ```bash
-git init
-git add .
-git commit -m "Initial commit - Next.js Link Collector"
+npm install -g vercel
 ```
 
-2. Create a new repository on GitHub
-
-3. Push your code:
+2. Login to Vercel:
 ```bash
-git remote add origin https://github.com/YOUR_USERNAME/link-collector.git
-git branch -M main
-git push -u origin main
+vercel login
 ```
 
-### Step 2: Deploy on Vercel
+3. Deploy:
+```bash
+vercel
+```
 
-1. Go to [vercel.com](https://vercel.com) and sign in with GitHub
+4. Add environment variable:
+```bash
+vercel env add MONGODB_URI
+```
 
-2. Click "Add New Project"
+Paste your MongoDB connection string when prompted.
 
-3. Import your `link-collector` repository
-
-4. Vercel will auto-detect Next.js - click "Deploy"
-
-### Step 3: Set up Vercel Postgres
-
-1. In your Vercel project dashboard, go to the "Storage" tab
-
-2. Click "Create Database" and select "Postgres"
-
-3. Choose a database name and region (select closest to your users)
-
-4. Click "Create"
-
-5. Vercel will automatically add the required environment variables to your project
-
-6. Redeploy your application:
-   - Go to "Deployments" tab
-   - Click the three dots on the latest deployment
-   - Select "Redeploy"
-
-### Step 4: Access Your Application
-
-Your app will be live at: `https://your-project-name.vercel.app`
-
-The database will automatically initialize on the first request!
+5. Deploy to production:
+```bash
+vercel --prod
+```
 
 ## Usage
 
 ### Adding Links
 
-1. Click "Add Link" in the navigation
-2. Enter a valid URL (e.g., https://example.com)
-3. Select a category from the dropdown
+1. Navigate to the home page
+2. Enter a URL (must be a valid URL format)
+3. Enter a category name
 4. Click "Add Link"
-5. The system will prevent duplicate URLs
+5. The app will prevent duplicate links automatically
 
 ### Viewing Links
 
 1. Click "View Links" in the navigation
-2. Use the category filter dropdown to:
-   - View all links (grouped by category)
-   - Filter by specific category
-3. Click "Copy All Links" button to copy all URLs from a category to clipboard
+2. Use the dropdown to filter by category or select "All Categories"
+3. Click "Copy" on individual links to copy them to clipboard
+4. Click "Copy All Links" to copy all filtered links at once
 
-### URL Filtering
+## Project Structure
 
-Access links directly by category using URL parameters:
-- All links: `/view?category=all`
-- Facebook links: `/view?category=facebook`
-- X/Twitter links: `/view?category=x`
-- Website links: `/view?category=website`
-- YouTube links: `/view?category=youtube`
-- Instagram links: `/view?category=instagram`
-- LinkedIn links: `/view?category=linkedin`
-- Other links: `/view?category=other`
-
-## Database Schema
-
-The PostgreSQL database contains one table:
-
-```sql
-CREATE TABLE links (
-    id SERIAL PRIMARY KEY,
-    url TEXT NOT NULL UNIQUE,
-    category TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_category ON links(category);
+```
+link-collector/
+├── app/
+│   ├── api/
+│   │   ├── links/
+│   │   │   └── route.js       # API endpoints for links
+│   │   └── categories/
+│   │       └── route.js       # API endpoint for categories
+│   ├── view/
+│   │   └── page.js            # View links page
+│   ├── globals.css            # Global styles
+│   ├── layout.js              # Root layout
+│   └── page.js                # Home page (add links)
+├── lib/
+│   └── mongodb.js             # MongoDB connection utility
+├── .env.example               # Environment variables template
+├── .gitignore                 # Git ignore rules
+├── next.config.js             # Next.js configuration
+├── package.json               # Dependencies
+├── vercel.json                # Vercel configuration
+└── README.md                  # This file
 ```
 
 ## API Endpoints
 
-### GET /api/stats
-Returns statistics about links:
+### POST /api/links
+Add a new link
+
+Request body:
 ```json
 {
-  "totalLinks": 10,
-  "totalCategories": 3,
-  "categoryStats": [...],
-  "recentLinks": [...]
+  "url": "https://example.com",
+  "category": "Tutorial"
 }
 ```
 
 ### GET /api/links
-Query parameters:
-- `category`: Filter by category (optional)
-- `action=categories`: Get all categories
+Get all links or filter by category
 
-### POST /api/links
-Add a new link:
-```json
+Query parameters:
+- `category` (optional): Filter by specific category
+
+### GET /api/categories
+Get all unique categories
+
+## Database Schema
+
+### Links Collection
+
+```javascript
 {
-  "url": "https://example.com",
-  "category": "website"
+  _id: ObjectId,
+  url: String (unique),
+  category: String,
+  createdAt: Date
 }
 ```
 
-## Security Features
+## Features Explained
 
-- Parameterized queries to prevent SQL injection
-- URL validation before insertion
-- React's built-in XSS protection
-- Unique constraint on URLs
-- HTTPS enforced on Vercel
+### Unique Link Enforcement
 
-## Customization
+The application ensures that each link is stored only once by:
+1. Checking for duplicates before insertion
+2. Creating a unique index on the `url` field in MongoDB
+3. Handling duplicate key errors gracefully
 
-### Adding New Categories
+### Category Management
 
-Edit `app/add/page.js` and add new options in the category select:
+Categories are dynamically managed:
+- No predefined category list needed
+- Categories are created when first used
+- The category filter shows only categories that have links
 
-```jsx
-<option value="new_category">New Category</option>
-```
+### Copy Functionality
 
-### Styling
-
-Modify `app/globals.css` to change colors, fonts, and layout.
+- Individual copy: Copies a single link to clipboard
+- Bulk copy: Copies all visible links (respects category filter)
+- Visual feedback with success messages
 
 ## Troubleshooting
 
-**Build fails:**
-- Ensure Node.js version is 18.x or higher: `node --version`
-- Delete `node_modules` and `.next` folders, then run `npm install` again
+### MongoDB Connection Issues
 
-**Database connection issues:**
-- Verify Vercel Postgres is created and connected to your project
-- Check environment variables are set in Vercel dashboard
-- Redeploy after adding database
+If you see connection errors:
+1. Check your MongoDB URI is correct
+2. Verify your IP address is whitelisted in MongoDB Atlas
+3. Ensure your database user has proper permissions
 
-**Links not saving:**
-- Check Vercel function logs in the dashboard
-- Verify database connection environment variables
-- Ensure database table was created (happens automatically on first request)
+### Build Errors
 
-## Environment Variables
+If deployment fails:
+1. Make sure all dependencies are in `package.json`
+2. Verify environment variables are set in Vercel
+3. Check build logs for specific errors
 
-Required for production (automatically set by Vercel when you create Postgres database):
-- `POSTGRES_URL`
-- `POSTGRES_PRISMA_URL`
-- `POSTGRES_URL_NON_POOLING`
-- `POSTGRES_USER`
-- `POSTGRES_HOST`
-- `POSTGRES_PASSWORD`
-- `POSTGRES_DATABASE`
+### Environment Variables
 
-## Performance & Reliability
-
-- **99%+ Uptime**: Hosted on Vercel's global edge network
-- **Auto-scaling**: Handles traffic spikes automatically
-- **Global CDN**: Fast loading from anywhere in the world
-- **Serverless Functions**: No server maintenance required
-- **Automatic HTTPS**: SSL certificates managed automatically
+Remember to:
+- Never commit `.env.local` to git
+- Set `MONGODB_URI` in Vercel dashboard for production
+- Use the exact variable name `MONGODB_URI`
 
 ## License
 
-Free to use and modify.
+MIT
+
+## Contributing
+
+Feel free to submit issues and enhancement requests!

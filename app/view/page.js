@@ -1,206 +1,177 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+
+const CATEGORIES = ['Facebook', 'Youtube', 'Twitter', 'Linkedin', 'Website', 'Others'];
 
 export default function ViewLinks() {
-  const searchParams = useSearchParams();
-  const categoryParam = searchParams.get('category') || 'all';
-
   const [links, setLinks] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [filter, setFilter] = useState(categoryParam);
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
+  const [message, setMessage] = useState({ text: '', type: '' });
 
   useEffect(() => {
     fetchLinks();
-  }, [filter]);
+  }, []);
 
-  const fetchCategories = async () => {
+  const fetchLinks = async (category = 'all') => {
+    setLoading(true);
     try {
-      const response = await fetch('/api/links?action=categories');
-      if (!response.ok) throw new Error('Failed to fetch categories');
-      const data = await response.json();
-      setCategories(data.categories || []);
-    } catch (err) {
-      console.error('Error fetching categories:', err);
-    }
-  };
-
-  const fetchLinks = async () => {
-    try {
-      setLoading(true);
-      const url = filter === 'all'
-        ? '/api/links'
-        : `/api/links?category=${encodeURIComponent(filter)}`;
+      const url =
+        category === 'all'
+          ? '/api/links'
+          : `/api/links?category=${encodeURIComponent(category)}`;
 
       const response = await fetch(url);
-      if (!response.ok) throw new Error('Failed to fetch links');
       const data = await response.json();
-      setLinks(data.links || []);
-    } catch (err) {
-      setError(err.message);
+
+      if (data.success) {
+        setLinks(data.links);
+      }
+    } catch (error) {
+      console.error('Error fetching links:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFilterChange = (e) => {
-    setFilter(e.target.value);
+  const handleCategoryChange = (e) => {
+    const category = e.target.value;
+    setSelectedCategory(category);
+    fetchLinks(category);
   };
 
-  const copyLinks = (category) => {
-    const linksToCategory = links.filter(link =>
-      category === 'all' || link.category === category
-    );
-    const urls = linksToCategory.map(link => link.url).join('\n');
-
-    navigator.clipboard.writeText(urls).then(() => {
-      const btn = document.querySelector(`[data-category="${category}"]`);
-      if (btn) {
-        const originalText = btn.textContent;
-        btn.textContent = 'Copied!';
-        btn.classList.add('copied');
-
-        setTimeout(() => {
-          btn.textContent = originalText;
-          btn.classList.remove('copied');
-        }, 2000);
-      }
-    }).catch(err => {
-      console.error('Failed to copy:', err);
-    });
+  const copyLink = async (url) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setMessage({ text: 'Link copied to clipboard!', type: 'success' });
+      setTimeout(() => setMessage({ text: '', type: '' }), 3000);
+    } catch (error) {
+      setMessage({ text: 'Failed to copy link', type: 'error' });
+    }
   };
 
-  const groupLinksByCategory = () => {
-    const grouped = {};
-    links.forEach(link => {
-      if (!grouped[link.category]) {
-        grouped[link.category] = [];
-      }
-      grouped[link.category].push(link);
-    });
-    return grouped;
+  const copyAllLinks = async () => {
+    try {
+      const allUrls = links.map((link) => link.url).join('\n');
+      await navigator.clipboard.writeText(allUrls);
+      setMessage({
+        text: `Copied ${links.length} link(s) to clipboard!`,
+        type: 'success',
+      });
+      setTimeout(() => setMessage({ text: '', type: '' }), 3000);
+    } catch (error) {
+      setMessage({ text: 'Failed to copy links', type: 'error' });
+    }
   };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
+      year: 'numeric',
       month: 'short',
       day: 'numeric',
-      year: 'numeric'
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
 
-  const linksByCategory = filter === 'all' ? groupLinksByCategory() : null;
-
   return (
     <div className="container">
-      <nav>
-        <Link href="/">Home</Link>
-        <Link href="/add">Add Link</Link>
-        <Link href="/view" className="active">View Links</Link>
-      </nav>
-
-      <h1>View Links</h1>
-
-      <div className="filter-section">
-        <form>
-          <label htmlFor="category">Filter by Category:</label>
-          <select
-            id="category"
-            name="category"
-            value={filter}
-            onChange={handleFilterChange}
-          >
-            <option value="all">All Categories</option>
-            {categories.map((cat) => (
-              <option key={cat.category} value={cat.category}>
-                {cat.category.charAt(0).toUpperCase() + cat.category.slice(1)}
-              </option>
-            ))}
-          </select>
-        </form>
-      </div>
-
-      {loading && <div className="loading">Loading...</div>}
-
-      {error && (
-        <div className="message error">
-          Error: {error}
-        </div>
-      )}
-
-      {!loading && links.length === 0 && (
-        <p className="no-links">
-          No links found. <Link href="/add">Add your first link!</Link>
+      <div className="card">
+        <h1>View Links</h1>
+        <p style={{ color: '#666', marginBottom: '30px' }}>
+          Browse and copy your saved links
         </p>
-      )}
 
-      {!loading && links.length > 0 && (
-        <>
-          <div className="stats">
-            <p>Total links: <strong>{links.length}</strong></p>
-          </div>
+        <div className="nav">
+          <Link href="/" className="btn btn-secondary">
+            Add Link
+          </Link>
+          <Link href="/view" className="btn">
+            View Links
+          </Link>
+        </div>
 
-          {filter === 'all' ? (
-            // Show links grouped by category
-            Object.entries(linksByCategory).map(([category, categoryLinks]) => (
-              <div key={category} className="category-section">
-                <h2>
-                  {category.charAt(0).toUpperCase() + category.slice(1)} ({categoryLinks.length})
-                </h2>
-                <button
-                  className="copy-btn"
-                  data-category={category}
-                  onClick={() => copyLinks(category)}
-                >
-                  Copy All {category.charAt(0).toUpperCase() + category.slice(1)} Links
-                </button>
-                <ul className="links-list">
-                  {categoryLinks.map((link) => (
-                    <li key={link.id}>
-                      <a href={link.url} target="_blank" rel="noopener noreferrer">
-                        {link.url}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))
-          ) : (
-            // Show filtered links
-            <div className="category-section">
-              <h2>
-                {filter.charAt(0).toUpperCase() + filter.slice(1)} ({links.length})
-              </h2>
-              <button
-                className="copy-btn"
-                data-category={filter}
-                onClick={() => copyLinks(filter)}
-              >
-                Copy All Links
-              </button>
-              <ul className="links-list">
-                {links.map((link) => (
-                  <li key={link.id}>
-                    <a href={link.url} target="_blank" rel="noopener noreferrer">
-                      {link.url}
-                    </a>
-                    <span className="date">{formatDate(link.created_at)}</span>
-                  </li>
-                ))}
-              </ul>
+        {message.text && (
+          <div className={`message ${message.type}`}>{message.text}</div>
+        )}
+
+        <div className="stats">
+          <div className="stat-item">
+            <div className="stat-value">{links.length}</div>
+            <div className="stat-label">
+              {selectedCategory === 'all' ? 'Total Links' : 'Filtered Links'}
             </div>
-          )}
-        </>
-      )}
+          </div>
+          <div className="stat-item">
+            <div className="stat-value">{CATEGORIES.length}</div>
+            <div className="stat-label">Categories</div>
+          </div>
+        </div>
+
+        <div className="filter-section">
+          <div className="form-group">
+            <label htmlFor="category">Filter by Category</label>
+            <select
+              id="category"
+              value={selectedCategory}
+              onChange={handleCategoryChange}
+            >
+              <option value="all">All Categories</option>
+              {CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            className="btn btn-success btn-small"
+            onClick={copyAllLinks}
+            disabled={links.length === 0}
+          >
+            Copy All Links
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">⏳</div>
+            <p>Loading links...</p>
+          </div>
+        ) : links.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">📭</div>
+            <p>
+              {selectedCategory === 'all'
+                ? 'No links saved yet. Add your first link!'
+                : `No links found in "${selectedCategory}" category.`}
+            </p>
+          </div>
+        ) : (
+          <div className="link-list">
+            {links.map((link) => (
+              <div key={link._id} className="link-item">
+                <div className="link-info">
+                  <div className="link-url">{link.url}</div>
+                  <span className="link-category">{link.category}</span>
+                  <div className="link-date">
+                    Added: {formatDate(link.createdAt)}
+                  </div>
+                </div>
+                <button
+                  className="btn btn-small"
+                  onClick={() => copyLink(link.url)}
+                >
+                  Copy
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,26 +1,39 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 
 export default function Home() {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [url, setUrl] = useState('');
+  const [category, setCategory] = useState('');
+  const [message, setMessage] = useState({ text: '', type: '' });
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMessage({ text: '', type: '' });
+    setLoading(true);
 
-  const fetchStats = async () => {
     try {
-      setLoading(true);
-      const response = await fetch('/api/stats');
-      if (!response.ok) throw new Error('Failed to fetch statistics');
+      const response = await fetch('/api/links', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url, category }),
+      });
+
       const data = await response.json();
-      setStats(data);
-    } catch (err) {
-      setError(err.message);
+
+      if (data.success) {
+        setMessage({ text: 'Link added successfully!', type: 'success' });
+        setUrl('');
+        setCategory('');
+      } else {
+        setMessage({ text: data.error || 'Failed to add link', type: 'error' });
+      }
+    } catch (error) {
+      setMessage({ text: 'An error occurred. Please try again.', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -28,79 +41,61 @@ export default function Home() {
 
   return (
     <div className="container">
-      <nav>
-        <Link href="/" className="active">Home</Link>
-        <Link href="/add">Add Link</Link>
-        <Link href="/view">View Links</Link>
-      </nav>
-
-      <div className="hero">
+      <div className="card">
         <h1>Link Collector</h1>
-        <p>Organize and manage your links by category</p>
-      </div>
+        <p style={{ color: '#666', marginBottom: '30px' }}>
+          Save and organize your favorite links by category
+        </p>
 
-      {loading && <div className="loading">Loading...</div>}
-
-      {error && (
-        <div className="message error">
-          Error: {error}
+        <div className="nav">
+          <Link href="/" className="btn">
+            Add Link
+          </Link>
+          <Link href="/view" className="btn btn-secondary">
+            View Links
+          </Link>
         </div>
-      )}
 
-      {stats && (
-        <>
-          <div className="stats-grid">
-            <div className="stat-card">
-              <h3>{stats.totalLinks}</h3>
-              <p>Total Links</p>
-            </div>
-            <div className="stat-card">
-              <h3>{stats.totalCategories}</h3>
-              <p>Categories</p>
-            </div>
+        {message.text && (
+          <div className={`message ${message.type}`}>{message.text}</div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="url">URL</label>
+            <input
+              type="url"
+              id="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://example.com"
+              required
+            />
           </div>
 
-          {stats.categoryStats && stats.categoryStats.length > 0 && (
-            <div className="category-stats">
-              <h2>Links by Category</h2>
-              <div className="category-grid">
-                {stats.categoryStats.map((stat) => (
-                  <Link
-                    key={stat.category}
-                    href={`/view?category=${encodeURIComponent(stat.category)}`}
-                    className="category-card"
-                  >
-                    <h3>{stat.category.charAt(0).toUpperCase() + stat.category.slice(1)}</h3>
-                    <p>{stat.count} link{stat.count !== 1 ? 's' : ''}</p>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
+          <div className="form-group">
+            <label htmlFor="category">Category</label>
+            <select
+              id="category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              required
+            >
+              <option value="">Select a category</option>
+              <option value="Facebook">Facebook</option>
+              <option value="Youtube">Youtube</option>
+              <option value="Twitter">Twitter</option>
+              <option value="Linkedin">Linkedin</option>
+              <option value="Website">Website</option>
+              <option value="Others">Others</option>
+            </select>
+          </div>
 
-          {stats.recentLinks && stats.recentLinks.length > 0 ? (
-            <div className="recent-links">
-              <h2>Recent Links</h2>
-              <ul className="links-list">
-                {stats.recentLinks.map((link) => (
-                  <li key={link.id}>
-                    <a href={link.url} target="_blank" rel="noopener noreferrer">
-                      {link.url}
-                    </a>
-                    <span className="category-badge">{link.category}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : (
-            <div className="empty-state">
-              <h2>No links yet</h2>
-              <p>Start by adding your first link!</p>
-              <Link href="/add" className="btn-primary">Add Link</Link>
-            </div>
-          )}
-        </>
-      )}
+          <button type="submit" className="btn" disabled={loading}>
+            {loading ? 'Adding...' : 'Add Link'}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
